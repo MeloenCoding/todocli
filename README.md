@@ -4,7 +4,7 @@ A simple commandline tool i wrote using Rust.
 The reason i post this on GitHub is that ive ran in to multiple very hard problems. Some of these problems were more or less undocumented.
 I hope this helps you with learning rust and maybe building your own 'todocli'.
 
-You can't use it as it is because i linked it to my api so i could use it across multiple devices. Altough you can simply fix this by changing the api_link
+You can't use it as it is because i linked it to my api for personal use. Altough you can simply fix this by changing the api_link
 variable in main.rs to the file you want to store your todos.
 
 Here are the commands you need if you decide to clone it:
