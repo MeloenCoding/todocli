@@ -1,9 +1,12 @@
 mod args;
 
-use args::{EntityType, ListSubCommand, ConfigSubCommand, TodoArgs};
+use std::path::Path;
+
+use args::{ConfigSubCommand, EntityType, ListSubCommand, TodoArgs};
 use clap::Parser;
-use dotenv::dotenv;
+use dotenv;
 use serde::{Deserialize, Serialize};
+use colored::Colorize;
 
 #[derive(Debug, Serialize, Deserialize)]
 struct TodoList {
@@ -14,18 +17,20 @@ struct TodoList {
 struct Todo {
     data: String,
     completed: bool,
-    key: String
+    key: String,
 }
 
 #[tokio::main]
 async fn main() -> Result<(), reqwest::Error> {
     let args = TodoArgs::parse();
-
-    println!("{}", dotenv().expect(".env file not found").display());
+    let path_to_env = Path::new("To Your Own .env File");
+    dotenv::from_path(path_to_env).expect(".env file not found"); 
     match &args.entity_type {
         EntityType::List(list) => match &list.command {
             ListSubCommand::Add(add_command) => {
-                let api_link = format!("{}/add", dotenv::var("API_LINK").unwrap());
+                let api_link = format!("{}/add", dotenv::var("API_LINK").unwrap()); 
+                // just add your own api link if you want to make it available accross mutliple devices
+                // you could also add compatability with a json file to make it a local tool
                 let res = reqwest::Client::new()
                     .post(api_link)
                     .header("Content-Type", "application/json")
@@ -78,22 +83,20 @@ async fn main() -> Result<(), reqwest::Error> {
     Ok(())
 }
 
-fn draw_cli(list: &TodoList){
-    println!("╔═════════╡todocli╞═══════ ");
+fn draw_cli(list: &TodoList) {
+    println!("╔═════════╡ {} {}{} ╞═══════", "todocli".blink(), "v".purple(), "0.1.1".yellow());
     println!("║ ");
-    let mut i = 0;
+    let mut i:i32 = 0;
     for todo_item in &list.data {
-        
         if todo_item.completed {
             println!("║  ╭ [{:?}] ", i);
-            println!("║  ╰─╴ [x] {}", todo_item.data );
-        }
-        else {
+            println!("║  ╰─╴ [{}] {}", "x".green(), todo_item.data);
+        } else {
             println!("║  ╭ [{:?}] ", i);
-            println!("║  ╰─╴ [ ] {}", todo_item.data );
+            println!("║  ╰─╴ [ ] {}", todo_item.data);
         }
         println!("║ ");
         i += 1;
     }
-    println!("╚═════════════════════════");
+    println!("╚═══════════════════════════════════");
 }

@@ -1,6 +1,6 @@
 # todocli
 
-A simple commandline tool i wrote using Rust.
+A simple commandline tool i wrote using Rust, clap.
 The reason i post this on GitHub is that ive ran in to multiple very hard problems. Some of these problems were more or less undocumented.
 I hope this helps you with learning rust and maybe building your own 'todocli'.
 
