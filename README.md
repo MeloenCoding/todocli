@@ -27,8 +27,10 @@ $ ./target/debug/todocli list show
 ```
 
 
-default config stored in: 
+## default config stored in: 
 
-// Linux:   /home/you/.config/todocli
-// Windows: C:\Users\you\AppData\Roaming\meloendev\todocli
-// macOS:   /Users/you/Library/Application Support/dev.meloendev.todocli
+Linux:   /home/you/.config/todocli
+
+Windows: C:\Users\you\AppData\Roaming\meloendev\todocli
+
+macOS:   /Users/you/Library/Application Support/dev.meloendev.todocli
