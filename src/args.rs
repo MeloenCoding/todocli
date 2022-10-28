@@ -16,7 +16,7 @@ pub enum EntityType {
     /// Add, mark as Done or Show todolist
     List(ListCommand),
     /// Edit config
-    Config(ConfigCommand)
+    Conf(ConfigCommand)
 }
 // List
 
@@ -55,16 +55,35 @@ pub enum EntityType {
     #[derive(Debug, Args)]
     pub struct ConfigCommand {
         #[clap(subcommand)]
-        pub command: ConfigSubCommand,
+        pub command: ConfigSubCommand
     }
 
     #[derive(Debug, Subcommand)]
     pub enum ConfigSubCommand {
-        Location(LocationEntity)
+        /// remote config settings
+        Remote(RemLocationEntity),
+        /// local config settings (make sure you put '[]' in your own .json file)
+        Local(LocLocationEntity)
     }
 
     #[derive(Debug, Args)]
-    pub struct LocationEntity{
-        /// The thing you need to get done
-        pub location: String,
+    pub struct RemLocationEntity{
+        /// link to your api (example: "https://your.cool/api")
+        #[arg(short)]
+        pub location: Option<String>,
+        /// enable the remote config
+        #[arg(short)]
+        pub enable: bool
     }
+
+    #[derive(Debug, Args)]
+    pub struct LocLocationEntity{
+        /// location of the file (example: "D:/Coding/todocli/data.json")
+        #[arg(short)]
+        pub location: Option<String>,
+        /// enable the remote config
+        #[arg(short)]
+        pub enable: bool
+    }
+
+
