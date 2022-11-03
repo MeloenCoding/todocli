@@ -26,6 +26,8 @@ struct Config {
     remote_location: String,
     remote_key: String,
     config_dir: String,
+    appId: String,
+    appKey: String
 }
 
 #[tokio::main]
@@ -37,6 +39,8 @@ async fn main() -> Result<(), reqwest::Error> {
         remote_location: "".to_string(),
         remote_key: "".to_string(),
         config_dir: "".to_string(),
+        appId: "".to_string(),
+        appKey: "".to_string()
     };
     if let Some(proj_dirs) = ProjectDirs::from("dev", "meloencoding", "todocli") {
         // store the path to the config and data
@@ -51,7 +55,7 @@ async fn main() -> Result<(), reqwest::Error> {
             std::fs::create_dir_all(config_path).unwrap();
             std::fs::create_dir_all(data_path).unwrap();
 
-            let byte_string: String = format!("local = true\nlocal_location = {:?}\nremote_location = \"https://your.crazy/api\"\nremote_key = \"\"\nconfig_dir = {:?}", 
+            let byte_string: String = format!("local = true\nlocal_location = {:?}\nremote_location = \"https://your.crazy/api\"\nremote_key = \"\"\nconfig_dir = {:?}\nappId = \"\"\nappKey = \"\"", 
                 proj_dirs.data_dir().join("data.json").as_os_str(), 
                 proj_dirs.config_dir().join("todocli.toml").as_os_str()
             );
@@ -72,7 +76,7 @@ async fn main() -> Result<(), reqwest::Error> {
                 "        -════╡ {} {}{} ╞════-",
                 "todocli".bright_cyan().blink(),
                 "v".purple(),
-                "0.2.0".yellow()
+                "0.2.1".yellow()
             );
             println!("Run this command again and enjoy.");
             std::process::exit(0x0100);
@@ -85,20 +89,24 @@ async fn main() -> Result<(), reqwest::Error> {
         EntityType::List(list) => match &list.command {
             ListSubCommand::Add(add_command) => {
                 if !config.local {
-                    let api_link: String = format!("{}/add", config.remote_location);
+                    let api_link: String = format!("{}", &config.remote_location);
                     let res: TodoList = reqwest::Client::new()
                         .post(api_link)
                         .header("Content-Type", "application/json")
                         .json(&serde_json::json!({
-                            "data": add_command.todo_item.to_string(),
-                            "completed": false,
-                            "key": config.remote_key
+                            "appId": config.appId.to_string(),
+                            "appKey": config.appKey.to_string(),
+                            "clientKey": config.remote_key.to_string(),
+                            "endpoint": "/add",
+                            "data": {
+                                "data": add_command.todo_item.to_string(),
+                                "completed": false
+                            }
                         }))
                         .send()
                         .await?
                         .json()
                         .await?;
-
                     draw_cli(&res);
                 } else {
                     let path: String = config.local_location;
@@ -110,7 +118,7 @@ async fn main() -> Result<(), reqwest::Error> {
                                 "        -════╡ {} {}{} ╞════-",
                                 "todocli".bright_cyan().blink(),
                                 "v".purple(),
-                                "0.2.0".yellow()
+                                "0.2.1".yellow()
                             );
                             println!("Can't read/find data file.");
                             println!("If you made a data file and configured it, make sure there is '[]' in the data file so it is valid json.");
@@ -130,14 +138,19 @@ async fn main() -> Result<(), reqwest::Error> {
             }
             ListSubCommand::Done(done_command) => {
                 if !config.local {
-                    let api_link: String = format!("{}/done", config.remote_location);
+                    let api_link: String = format!("{}", config.remote_location);
                     let res: TodoList = reqwest::Client::new()
                         .post(api_link)
                         .header("Content-Type", "application/json")
                         .json(&serde_json::json!({
-                            "index": done_command.index_of_item,
-                            "shouldRemove": done_command.remove,
-                            "key": config.remote_key
+                            "appId": config.appId.to_string(),
+                            "appKey": config.appKey.to_string(),
+                            "clientKey": config.remote_key.to_string(),
+                            "endpoint": "/done",
+                            "data": {
+                                "index": done_command.index_of_item,
+                                "shouldRemove": done_command.remove
+                            }
                         }))
                         .send()
                         .await?
@@ -155,7 +168,7 @@ async fn main() -> Result<(), reqwest::Error> {
                                 "        -════╡ {} {}{} ╞════-",
                                 "todocli".bright_cyan().blink(),
                                 "v".purple(),
-                                "0.2.0".yellow()
+                                "0.2.1".yellow()
                             );
                             println!("Can't read/find data file.");
                             println!("If you made a data file and configured it, make sure there is '[]' in the data file so it is valid json.");
@@ -176,12 +189,16 @@ async fn main() -> Result<(), reqwest::Error> {
             }
             ListSubCommand::Show => {
                 if !config.local {
-                    let api_link: String = format!("{}/show", config.remote_location);
+                    let api_link: String = format!("{}", config.remote_location);
                     let res: TodoList = reqwest::Client::new()
                         .post(api_link)
                         .header("Content-Type", "application/json")
                         .json(&serde_json::json!({
-                            "key": config.remote_key
+                            "appId": config.appId.to_string(),
+                            "appKey": config.appKey.to_string(),
+                            "clientKey": config.remote_key.to_string(),
+                            "endpoint": "/show",
+                            "data": {}
                         }))
                         .send()
                         .await?
@@ -198,7 +215,7 @@ async fn main() -> Result<(), reqwest::Error> {
                                 "        -════╡ {} {}{} ╞════-",
                                 "todocli".bright_cyan().blink(),
                                 "v".purple(),
-                                "0.2.0".yellow()
+                                "0.2.1".yellow()
                             );
                             println!("Can't read/find data file.");
                             println!("If you made a data file and configured it, make sure there is '[]' in the data file so it is valid json.");
@@ -215,7 +232,7 @@ async fn main() -> Result<(), reqwest::Error> {
                                 "        -════╡ {} {}{} ╞════-",
                                 "todocli".bright_cyan().blink(),
                                 "v".purple(),
-                                "0.2.0".yellow()
+                                "0.2.1".yellow()
                             );
                             println!("Can't find data file. Please configure one.")
                         }
@@ -233,7 +250,7 @@ async fn main() -> Result<(), reqwest::Error> {
                     dbg!(&config.config_dir);
 
                     if loc_command.location.is_some() {
-                        let byte_string = format!("local = {}\nlocal_location = {:?}\nremote_location = {:?}\nremote_key = {:?}\nconfig_dir = {:?}", &config.local, &loc_command.location.as_ref().unwrap(), &config.remote_location, &config.remote_key, &config.config_dir);
+                        let byte_string = format!("local = {}\nlocal_location = {:?}\nremote_location = {:?}\nremote_key = {:?}\nconfig_dir = {:?}\nappId = {:?}\nappKey = {:?}", &config.local, &loc_command.location.as_ref().unwrap(), &config.remote_location, &config.remote_key, &config.config_dir, &config.appId, &config.appKey);
                         let mut new_config_file: File = OpenOptions::new()
                             .write(true)
                             .open(&config.config_dir)
@@ -243,7 +260,7 @@ async fn main() -> Result<(), reqwest::Error> {
                             .expect("can't write file");
 
                         if loc_command.enable {
-                            let byte_string = format!("local = true\nlocal_location = {:?}\nremote_location = {:?}\nremote_key = {:?}\nconfig_dir = {:?}", &loc_command.location.as_ref().unwrap(), &config.remote_location, &config.remote_key, &config.config_dir);
+                            let byte_string = format!("local = true\nlocal_location = {:?}\nremote_location = {:?}\nremote_key = {:?}\nconfig_dir = {:?}\nappId = {:?}\nappKey = {:?}", &loc_command.location.as_ref().unwrap(), &config.remote_location, &config.remote_key, &config.config_dir, &config.appId, &config.appKey);
                             let mut new_config_file: File = OpenOptions::new() 
                                 .write(true)
                                 .open(&config.config_dir)
@@ -253,7 +270,7 @@ async fn main() -> Result<(), reqwest::Error> {
                                 .expect("can't write file");
                         }
                     } else if loc_command.enable {
-                        let byte_string = format!("local = true\nlocal_location = {:?}\nremote_location = {:?}\nremote_key = {:?}\nconfig_dir = {:?}", &config.local_location, &config.remote_location, &config.remote_key, &config.config_dir);
+                        let byte_string = format!("local = true\nlocal_location = {:?}\nremote_location = {:?}\nremote_key = {:?}\nconfig_dir = {:?}\nappId = {:?}\nappKey = {:?}", &config.local_location, &config.remote_location, &config.remote_key, &config.config_dir, &config.appId, &config.appKey);
                         let mut new_config_file: File = OpenOptions::new()
                             .write(true)
                             .open(&config.config_dir)
@@ -271,7 +288,7 @@ async fn main() -> Result<(), reqwest::Error> {
                     }
 
                     if loc_command.location.is_some() {
-                        let byte_string = format!("local = {}\nlocal_location = {:?}\nremote_location = {:?}\nremote_key = {:?}\nconfig_dir = {:?}", &config.local, &config.local_location, &loc_command.location.as_ref().unwrap(), &config.remote_key, &config.config_dir);
+                        let byte_string = format!("local = {}\nlocal_location = {:?}\nremote_location = {:?}\nremote_key = {:?}\nconfig_dir = {:?}\nappId = {:?}\nappKey = {:?}", &config.local, &config.local_location, &loc_command.location.as_ref().unwrap(), &config.remote_key, &config.config_dir, &config.appId, &config.appKey);
                         let mut new_config_file: File = OpenOptions::new()
                             .write(true)
                             .open(&config.config_dir)
@@ -282,7 +299,7 @@ async fn main() -> Result<(), reqwest::Error> {
                             .expect("can't write file");
 
                         if loc_command.enable {
-                            let byte_string = format!("local = false\nlocal_location = {:?}\nremote_location = {:?}\nremote_key = {:?}\nconfig_dir = {:?}", &config.local_location, &loc_command.location.as_ref().unwrap(), &config.remote_key, &config.config_dir);
+                            let byte_string = format!("local = false\nlocal_location = {:?}\nremote_location = {:?}\nremote_key = {:?}\nconfig_dir = {:?}\nappId = {:?}\nappKey = {:?}", &config.local_location, &loc_command.location.as_ref().unwrap(), &config.remote_key, &config.config_dir, &config.appId, &config.appKey);
                             let mut new_config_file: File = OpenOptions::new()
                                 .write(true)
                                 .open(&config.config_dir)
@@ -292,7 +309,7 @@ async fn main() -> Result<(), reqwest::Error> {
                                 .expect("can't write file");
                         }
                     } else if loc_command.enable {
-                        let byte_string = format!("local = true\nlocal_location = {:?}\nremote_location = {:?}\nremote_key = {:?}\nconfig_dir = {:?}", &config.local_location, &config.remote_location, &config.remote_key, &config.config_dir);
+                        let byte_string = format!("local = true\nlocal_location = {:?}\nremote_location = {:?}\nremote_key = {:?}\nconfig_dir = {:?}\nappId = {:?}\nappKey = {:?}", &config.local_location, &config.remote_location, &config.remote_key, &config.config_dir, &config.appId, &config.appKey);
                         let mut new_config_file: File = OpenOptions::new()
                             .write(true)
                             .open(&config.config_dir)
@@ -313,7 +330,7 @@ fn draw_cli(list: &TodoList) {
         "╔═════════╡ {} {}{} ╞═══════",
         "todocli".bright_cyan().blink(),
         "v".purple(),
-        "0.2.0".yellow()
+        "0.2.1".yellow()
     );
     println!("║ ");
     let mut i: i32 = 0;
