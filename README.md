@@ -1,12 +1,12 @@
 # todocli
 
 A simple commandline tool i wrote using Rust.
-The reason i post this on GitHub is that ive ran in to multiple very hard problems. Some of these problems were more or less undocumented.
+The reason i post this on GitHub is that ive ran in to multiple problems. Some of these problems were more or less undocumented.
 I hope this helps you with learning rust and maybe building your own 'todocli'.
 
 you can use this program as it is by running 'todocli list show' twice. once to generate a config file and data file in 
 the default config location. (see bottom of this readme). then you can call 'todocli list add "Something that needs to get done"'
-and it will add it to the data file. you can then see the data file by just calling the list show again.
+and it will add it to the data file. you can then see the data file by just calling the list show command again.
 
 you can mark todo's as completed in your list by calling 'todocli list done 0' to mark the todo at index 0.
 
