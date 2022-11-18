@@ -18,6 +18,7 @@ struct TodoList {
 struct Todo {
     data: String,
     completed: bool,
+    doing: bool
 }
 #[derive(Deserialize, Debug)]
 struct Config {
@@ -76,7 +77,7 @@ async fn main() -> Result<(), reqwest::Error> {
                 "        -════╡ {} {}{} ╞════-",
                 "todocli".bright_cyan().blink(),
                 "v".purple(),
-                "0.2.1".yellow()
+                env!("CARGO_PKG_VERSION").yellow()
             );
             println!("Run this command again and enjoy.");
             std::process::exit(0x0100);
@@ -118,7 +119,7 @@ async fn main() -> Result<(), reqwest::Error> {
                                 "        -════╡ {} {}{} ╞════-",
                                 "todocli".bright_cyan().blink(),
                                 "v".purple(),
-                                "0.2.1".yellow()
+                                env!("CARGO_PKG_VERSION").yellow()
                             );
                             println!("Can't read/find data file.");
                             println!("If you made a data file and configured it, make sure there is '[]' in the data file so it is valid json.");
@@ -127,8 +128,9 @@ async fn main() -> Result<(), reqwest::Error> {
                     };
                     let mut data: Vec<Todo> = serde_json::from_str(&data_file).unwrap();
                     let new_todo: Todo = Todo {
-                        data: (add_command.todo_item.to_string()),
-                        completed: (false),
+                        data: add_command.todo_item.to_string(),
+                        completed: false,
+                        doing: false
                     };
                     data.push(new_todo);
                     std::fs::write(path_to_data, serde_json::to_string_pretty(&data).unwrap())
@@ -168,7 +170,7 @@ async fn main() -> Result<(), reqwest::Error> {
                                 "        -════╡ {} {}{} ╞════-",
                                 "todocli".bright_cyan().blink(),
                                 "v".purple(),
-                                "0.2.1".yellow()
+                                env!("CARGO_PKG_VERSION").yellow()
                             );
                             println!("Can't read/find data file.");
                             println!("If you made a data file and configured it, make sure there is '[]' in the data file so it is valid json.");
@@ -187,6 +189,55 @@ async fn main() -> Result<(), reqwest::Error> {
                     draw_cli(&TodoList { data: (data) });
                 }
             }
+
+            ListSubCommand::Doing(doing_command) => {
+                if !config.local {
+                    let api_link: String = format!("{}", config.remote_location);
+                    let res: TodoList = reqwest::Client::new()
+                        .post(api_link)
+                        .header("Content-Type", "application/json")
+                        .json(&serde_json::json!({
+                            "appId": config.appId.to_string(),
+                            "appKey": config.appKey.to_string(),
+                            "clientKey": config.remote_key.to_string(),
+                            "endpoint": "/doing",
+                            "data": {
+                                "index": doing_command.index_of_item
+                            }
+                        }))
+                        .send()
+                        .await?
+                        .json()
+                        .await?;
+
+                    draw_cli(&res);
+                } else {
+                    let path: String = config.local_location;
+                    let path_to_data: &Path = Path::new(&path);
+                    let data_file: String = match fs::read_to_string(path_to_data) {
+                        Ok(data_string) => data_string,
+                        Err(_error) => { 
+                            println!(
+                                "        -════╡ {} {}{} ╞════-",
+                                "todocli".bright_cyan().blink(),
+                                "v".purple(),
+                                env!("CARGO_PKG_VERSION").yellow()
+                            );
+                            println!("Can't read/find data file.");
+                            println!("If you made a data file and configured it, make sure there is '[]' in the data file so it is valid json.");
+                            std::process::exit(0x0100);
+                        }
+                    };
+                    let mut data: Vec<Todo> = serde_json::from_str(&data_file).unwrap();
+                    let index: usize = doing_command.index_of_item as usize; 
+                    data[index].doing = !data[index].doing;
+
+                    std::fs::write(path_to_data, serde_json::to_string_pretty(&data).unwrap())
+                        .unwrap();
+                    draw_cli(&TodoList { data: (data) });
+                }
+            }
+
             ListSubCommand::Show => {
                 if !config.local {
                     let api_link: String = format!("{}", config.remote_location);
@@ -215,7 +266,7 @@ async fn main() -> Result<(), reqwest::Error> {
                                 "        -════╡ {} {}{} ╞════-",
                                 "todocli".bright_cyan().blink(),
                                 "v".purple(),
-                                "0.2.1".yellow()
+                                env!("CARGO_PKG_VERSION").yellow()
                             );
                             println!("Can't read/find data file.");
                             println!("If you made a data file and configured it, make sure there is '[]' in the data file so it is valid json.");
@@ -232,7 +283,7 @@ async fn main() -> Result<(), reqwest::Error> {
                                 "        -════╡ {} {}{} ╞════-",
                                 "todocli".bright_cyan().blink(),
                                 "v".purple(),
-                                "0.2.1".yellow()
+                                env!("CARGO_PKG_VERSION").yellow()
                             );
                             println!("Can't find data file. Please configure one.")
                         }
@@ -330,7 +381,7 @@ fn draw_cli(list: &TodoList) {
         "╔═════════╡ {} {}{} ╞═══════",
         "todocli".bright_cyan().blink(),
         "v".purple(),
-        "0.2.1".yellow()
+        env!("CARGO_PKG_VERSION").yellow()
     );
     println!("║ ");
     let mut i: i32 = 0;
@@ -338,7 +389,14 @@ fn draw_cli(list: &TodoList) {
         if todo_item.completed {
             println!("║  ╭ [{:?}] ", i);
             println!("║  ╰─╴ [{}] {}", "x".green(), todo_item.data);
-        } else {
+        } 
+        
+        else if todo_item.doing {
+            println!("║  ╭ [{:?}] ", i);
+            println!("║  ╰─╴ [{}] {}", "o".purple(), todo_item.data);
+        }
+        
+        else {
             println!("║  ╭ [{:?}] ", i);
             println!("║  ╰─╴ [ ] {}", todo_item.data);
         }

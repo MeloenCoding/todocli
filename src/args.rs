@@ -32,6 +32,8 @@ pub enum EntityType {
         Add(AddTodo),
         /// Mark as Done
         Done(TodoDone),
+        /// Mark as Doing
+        Doing(TodoDoing),
         /// Show all items in todo list
         Show,
     }
@@ -48,6 +50,10 @@ pub enum EntityType {
         /// Remove todo out of the List
         #[arg(short)]
         pub remove: bool,
+    }
+    #[derive(Debug, Args)]
+    pub struct TodoDoing {
+        pub index_of_item: i32,
     }
 
 // Config
